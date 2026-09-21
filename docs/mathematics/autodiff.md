@@ -6,6 +6,6 @@ For an operation `z = f(x, y)`, reverse mode receives `∂L/∂z` and applies th
 
 `∂L/∂x += (∂L/∂z)(∂z/∂x)`
 
-The `+=` is important: when a value is reused in multiple branches, each branch contributes to the same gradient. `Value.backward()` first builds a topological ordering of reachable nodes, seeds the output with gradient 1, and visits that ordering in reverse.
+The `+=` is important: when a value is reused in multiple branches, each branch contributes to the same gradient. `Value.backward()` first builds a topological ordering of reachable nodes, clears gradients on graph intermediates, seeds the output with gradient 1, and visits that ordering in reverse. Leaf gradients are deliberately retained, so backward calls on independent outputs that share a leaf accumulate their contributions.
 
-The implementation lives in `src/gradforge/value.py`. Tests compare elementary derivatives with centered finite differences and explicitly cover reused values and repeated backward calls.
+The implementation lives in `src/gradforge/value.py`. Tests compare elementary derivatives with centered finite differences and explicitly cover reused values, repeated backward calls, and shared leaves reached through distinct outputs.

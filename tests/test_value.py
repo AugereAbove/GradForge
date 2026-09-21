@@ -46,3 +46,14 @@ def test_backward_accumulates_across_calls() -> None:
     y.backward()
     y.backward()
     assert x.grad == pytest.approx(8.0)
+
+
+def test_backward_accumulates_shared_leaf_gradients_across_outputs() -> None:
+    x = Value(2.0)
+    linear_output = x * 2.0
+    cubic_output = x**3
+
+    linear_output.backward()
+    cubic_output.backward()
+
+    assert x.grad == pytest.approx(14.0)

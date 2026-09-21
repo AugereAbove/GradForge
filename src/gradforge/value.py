@@ -145,11 +145,12 @@ class Value:
                 topo.append(node)
 
         build(self)
-        # Intermediate gradients belong to this traversal. Leaf gradients are
-        # intentionally preserved so separate backward calls accumulate in the
-        # user-visible gradient, matching the documented API.
+        # Intermediate gradients belong to this traversal, so reset every node
+        # that has parents (including this output when it is non-leaf). Leaf
+        # gradients are intentionally preserved: backpropagating independent
+        # outputs that share a leaf must accumulate their contributions.
         for node in topo:
-            if node is not self:
+            if node._prev:
                 node.grad = 0.0
         self.grad += 1.0
         for node in reversed(topo):
