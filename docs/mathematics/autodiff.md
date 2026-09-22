@@ -8,4 +8,12 @@ For an operation `z = f(x, y)`, reverse mode receives `∂L/∂z` and applies th
 
 The `+=` is important: when a value is reused in multiple branches, each branch contributes to the same gradient. `Value.backward()` first builds a topological ordering of reachable nodes, clears gradients on graph intermediates, seeds the output with gradient 1, and visits that ordering in reverse. Leaf gradients are deliberately retained, so backward calls on independent outputs that share a leaf accumulate their contributions.
 
-The implementation lives in `src/gradforge/value.py`. Tests compare elementary derivatives with centered finite differences and explicitly cover reused values, repeated backward calls, and shared leaves reached through distinct outputs.
+Exponentiation supports either a Python scalar exponent or another `Value`. For `z = x^y` with a differentiable exponent and `x > 0`, the local derivatives are:
+
+`∂z/∂x = yx^(y - 1)`
+
+`∂z/∂y = x^y ln(x)`
+
+The positive-base restriction is necessary for the real-valued derivative with respect to `y`. Reverse exponentiation is also supported, so `3.0 ** y` differentiates as `3.0^y ln(3.0)`.
+
+The implementation lives in `src/gradforge/value.py`. Tests compare elementary derivatives with centered finite differences and explicitly cover reused values, repeated backward calls, shared leaves reached through distinct outputs, and differentiable exponentiation.

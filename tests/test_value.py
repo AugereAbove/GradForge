@@ -15,6 +15,55 @@ def test_power_backward() -> None:
     assert x.grad == pytest.approx(12.0)
 
 
+def test_variable_exponent_backward_matches_analytical_derivatives() -> None:
+    base = Value(2.0)
+    exponent = Value(3.0)
+
+    (base**exponent).backward()
+
+    assert base.grad == pytest.approx(12.0)
+    assert exponent.grad == pytest.approx(8.0 * math.log(2.0))
+
+
+def test_self_power_accumulates_base_and_exponent_partials() -> None:
+    x = Value(2.0)
+
+    (x**x).backward()
+
+    assert x.grad == pytest.approx(4.0 * (1.0 + math.log(2.0)))
+
+
+def test_variable_exponent_gradients_match_finite_differences() -> None:
+    base_data = 1.7
+    exponent_data = 2.3
+    base = Value(base_data)
+    exponent = Value(exponent_data)
+
+    (base**exponent).backward()
+
+    assert base.grad == pytest.approx(
+        finite_difference(lambda candidate: candidate**exponent_data, base_data), rel=1e-5
+    )
+    assert exponent.grad == pytest.approx(
+        finite_difference(lambda candidate: base_data**candidate, exponent_data), rel=1e-5
+    )
+
+
+def test_reverse_power_backpropagates_to_exponent() -> None:
+    exponent = Value(2.0)
+    output = 3.0**exponent
+
+    output.backward()
+
+    assert output.data == pytest.approx(9.0)
+    assert exponent.grad == pytest.approx(9.0 * math.log(3.0))
+
+
+def test_differentiable_exponent_rejects_non_positive_base() -> None:
+    with pytest.raises(ValueError, match="positive base"):
+        Value(0.0) ** Value(2.0)
+
+
 def test_branching_accumulates_reused_value() -> None:
     x = Value(3.0)
     y = x * x + x
