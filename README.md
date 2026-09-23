@@ -21,7 +21,7 @@ print(x.grad)  # 12.0
 python -m pip install -e ".[dev]"
 pytest
 ruff check .
-mypy src
+mypy src tests --strict
 ```
 
 See [ROADMAP.md](ROADMAP.md) for the staged plan and [docs/mathematics/autodiff.md](docs/mathematics/autodiff.md) for the mathematical foundation.

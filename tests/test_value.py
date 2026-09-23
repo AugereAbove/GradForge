@@ -1,11 +1,12 @@
 import math
+from collections.abc import Callable
 
 import pytest
 
 from gradforge import Value
 
 
-def finite_difference(fn, x: float, epsilon: float = 1e-6) -> float:
+def finite_difference(fn: Callable[[float], float], x: float, epsilon: float = 1e-6) -> float:
     return (fn(x + epsilon) - fn(x - epsilon)) / (2 * epsilon)
 
 
@@ -75,9 +76,20 @@ def test_branching_accumulates_reused_value() -> None:
 @pytest.mark.parametrize("name", ["exp", "log", "tanh", "relu"])
 def test_unary_derivatives_match_finite_difference(name: str) -> None:
     x = Value(1.2 if name != "log" else 1.7)
-    y = getattr(x, name)()
+    fn: Callable[[float], float]
+    if name == "exp":
+        y = x.exp()
+        fn = math.exp
+    elif name == "log":
+        y = x.log()
+        fn = math.log
+    elif name == "tanh":
+        y = x.tanh()
+        fn = math.tanh
+    else:
+        y = x.relu()
+        fn = lambda value: max(0.0, value)
     y.backward()
-    fn = getattr(math, name) if name != "relu" else lambda v: max(0.0, v)
     assert x.grad == pytest.approx(finite_difference(fn, x.data), rel=1e-5, abs=1e-7)
 
 
