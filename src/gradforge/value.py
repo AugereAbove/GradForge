@@ -33,7 +33,12 @@ class Value:
 
     def _binary(self, other: Value | float, op: str, fn: Callable[[float, float], float]) -> Value:
         rhs = other if isinstance(other, Value) else Value(other, requires_grad=False)
-        out = Value(fn(self.data, rhs.data), (self, rhs), op)
+        out = Value(
+            fn(self.data, rhs.data),
+            (self, rhs),
+            op,
+            requires_grad=self.requires_grad or rhs.requires_grad,
+        )
 
         def backward() -> None:
             if self.requires_grad:
@@ -85,15 +90,20 @@ class Value:
     def __pow__(self, exponent: Value | float) -> Value:
         """Raise this value to a scalar exponent.
 
-        A ``Value`` exponent is differentiable with respect to both operands.
-        Its derivative uses ``log(self.data)``, so the real-valued operation
-        requires a strictly positive base.
+        An exponent that requires gradients is differentiable with respect to
+        both operands. Its derivative uses ``log(self.data)``, so that
+        real-valued operation requires a strictly positive base.
         """
         rhs = exponent if isinstance(exponent, Value) else Value(exponent, requires_grad=False)
-        if isinstance(exponent, Value) and self.data <= 0.0:
+        if rhs.requires_grad and self.data <= 0.0:
             raise ValueError("A differentiable exponent requires a positive base")
 
-        out = Value(self.data**rhs.data, (self, rhs), "**")
+        out = Value(
+            self.data**rhs.data,
+            (self, rhs),
+            "**",
+            requires_grad=self.requires_grad or rhs.requires_grad,
+        )
 
         def backward() -> None:
             if self.requires_grad:
@@ -108,7 +118,7 @@ class Value:
         return Value(other, requires_grad=False) ** self
 
     def exp(self) -> Value:
-        out = Value(math.exp(self.data), (self,), "exp")
+        out = Value(math.exp(self.data), (self,), "exp", requires_grad=self.requires_grad)
 
         def backward() -> None:
             if self.requires_grad:
@@ -118,7 +128,7 @@ class Value:
         return out
 
     def log(self) -> Value:
-        out = Value(math.log(self.data), (self,), "log")
+        out = Value(math.log(self.data), (self,), "log", requires_grad=self.requires_grad)
 
         def backward() -> None:
             if self.requires_grad:
@@ -128,7 +138,7 @@ class Value:
         return out
 
     def tanh(self) -> Value:
-        out = Value(math.tanh(self.data), (self,), "tanh")
+        out = Value(math.tanh(self.data), (self,), "tanh", requires_grad=self.requires_grad)
 
         def backward() -> None:
             if self.requires_grad:
@@ -138,7 +148,7 @@ class Value:
         return out
 
     def relu(self) -> Value:
-        out = Value(max(0.0, self.data), (self,), "relu")
+        out = Value(max(0.0, self.data), (self,), "relu", requires_grad=self.requires_grad)
 
         def backward() -> None:
             if self.requires_grad:
@@ -149,6 +159,9 @@ class Value:
 
     def backward(self) -> None:
         """Accumulate gradients from this scalar output through its graph."""
+        if not self.requires_grad:
+            raise RuntimeError("Cannot call backward on a Value that does not require gradients")
+
         topo: list[Value] = []
         visited: set[Value] = set()
 

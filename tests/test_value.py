@@ -65,6 +65,27 @@ def test_differentiable_exponent_rejects_non_positive_base() -> None:
         Value(0.0) ** Value(2.0)
 
 
+def test_frozen_exponent_allows_negative_base_gradient() -> None:
+    base = Value(-2.0)
+    exponent = Value(3.0, requires_grad=False)
+
+    output = base**exponent
+    output.backward()
+
+    assert output.data == pytest.approx(-8.0)
+    assert base.grad == pytest.approx(12.0)
+    assert exponent.grad == pytest.approx(0.0)
+
+
+def test_frozen_graph_does_not_require_gradients() -> None:
+    frozen = Value(2.0, requires_grad=False)
+    output = frozen.exp() + 3.0
+
+    assert not output.requires_grad
+    with pytest.raises(RuntimeError, match="does not require gradients"):
+        output.backward()
+
+
 def test_branching_accumulates_reused_value() -> None:
     x = Value(3.0)
     y = x * x + x
