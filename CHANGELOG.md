@@ -7,3 +7,4 @@
 - Add differentiable scalar exponents, including reverse powers and positive-domain validation.
 - Keep scalar numerical regression tests clean under strict mypy checking.
 - Propagate `requires_grad` through scalar operations and allow frozen exponents with valid negative bases.
+- Validate scalar power boundary cases in the real, finite-gradient domain.

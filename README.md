@@ -2,7 +2,7 @@
 
 GradForge is an educational deep-learning engine and automatic-differentiation framework implemented from first principles with NumPy.
 
-The project is intentionally built in small, validated phases. The current implementation is Phase 1: a scalar reverse-mode autodiff engine with a dynamic computation graph, gradient accumulation, elementary functions, and finite-difference tests. Tensor arrays and neural-network layers are deliberately not part of this first cycle.
+The project is intentionally built in small, validated phases. Phase 1 is complete and awaiting owner review: it provides a scalar reverse-mode autodiff engine with a dynamic computation graph, gradient accumulation, elementary functions, finite-difference tests, and explicit real-domain power boundaries. Tensor arrays and neural-network layers remain deliberately out of scope until that review approves advancement.
 
 ## Current example
 

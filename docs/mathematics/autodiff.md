@@ -18,4 +18,6 @@ The positive-base restriction is necessary for the real-valued derivative with r
 
 Values can be frozen with `requires_grad=False`. That state propagates through operations: a result requires gradients only when at least one input does. A frozen `Value` exponent does not need the logarithmic derivative, so negative bases remain valid whenever their forward power is real (for example, `(-2)^3`). Calling `backward()` on an entirely frozen graph raises an error rather than silently writing a gradient into it.
 
+Power operations explicitly stay in the real-valued, finite-gradient domain. A negative base therefore requires an integer frozen exponent, and a zero base requires a positive exponent. When the base needs gradients, zero bases also reject exponents below one because their base derivative is not finite. Fully frozen expressions may still evaluate a real forward-only boundary case such as `0^0.5`.
+
 The implementation lives in `src/gradforge/value.py`. Tests compare elementary derivatives with centered finite differences and explicitly cover reused values, repeated backward calls, shared leaves reached through distinct outputs, and differentiable exponentiation.

@@ -77,6 +77,38 @@ def test_frozen_exponent_allows_negative_base_gradient() -> None:
     assert exponent.grad == pytest.approx(0.0)
 
 
+def test_frozen_fractional_exponent_rejects_negative_base_outside_real_domain() -> None:
+    with pytest.raises(ValueError, match="integer exponent"):
+        Value(-2.0) ** Value(0.5, requires_grad=False)
+
+
+@pytest.mark.parametrize("exponent", [0.0, -1.0])
+def test_zero_base_rejects_non_positive_exponents(exponent: float) -> None:
+    with pytest.raises(ValueError, match="positive exponent"):
+        Value(0.0) ** exponent
+
+
+def test_zero_base_rejects_fractional_exponent_with_non_finite_gradient() -> None:
+    with pytest.raises(ValueError, match="finite gradient"):
+        Value(0.0) ** 0.5
+
+
+def test_frozen_zero_base_allows_fractional_forward_power() -> None:
+    output = Value(0.0, requires_grad=False) ** 0.5
+
+    assert output.data == pytest.approx(0.0)
+    assert not output.requires_grad
+
+
+def test_zero_base_linear_power_has_finite_gradient() -> None:
+    base = Value(0.0)
+    output = base**1.0
+
+    output.backward()
+
+    assert base.grad == pytest.approx(1.0)
+
+
 def test_frozen_graph_does_not_require_gradients() -> None:
     frozen = Value(2.0, requires_grad=False)
     output = frozen.exp() + 3.0

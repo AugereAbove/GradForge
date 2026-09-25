@@ -97,6 +97,13 @@ class Value:
         rhs = exponent if isinstance(exponent, Value) else Value(exponent, requires_grad=False)
         if rhs.requires_grad and self.data <= 0.0:
             raise ValueError("A differentiable exponent requires a positive base")
+        if self.data < 0.0 and not rhs.data.is_integer():
+            raise ValueError("A negative base requires an integer exponent in real-valued mode")
+        if self.data == 0.0:
+            if rhs.data <= 0.0:
+                raise ValueError("A zero base requires a positive exponent")
+            if self.requires_grad and rhs.data < 1.0:
+                raise ValueError("A zero base requires an exponent of at least 1 for a finite gradient")
 
         out = Value(
             self.data**rhs.data,
@@ -107,7 +114,8 @@ class Value:
 
         def backward() -> None:
             if self.requires_grad:
-                self.grad += out.grad * rhs.data * (self.data ** (rhs.data - 1))
+                base_derivative = 0.0 if rhs.data == 0.0 else rhs.data * (self.data ** (rhs.data - 1))
+                self.grad += out.grad * base_derivative
             if rhs.requires_grad:
                 rhs.grad += out.grad * out.data * math.log(self.data)
 
